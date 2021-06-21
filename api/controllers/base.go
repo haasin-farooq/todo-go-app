@@ -51,6 +51,7 @@ func (a *App) InitializeRoutes() {
 	s.Use(middlewares.AuthJwtVerify)
 
 	s.HandleFunc("/todos", a.CreateTodo).Methods("POST")
+	s.HandleFunc("/todos", a.GetUserTodos).Methods("GET")
 }
 
 func (a *App) RunServer() {
