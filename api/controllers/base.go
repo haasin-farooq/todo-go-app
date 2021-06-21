@@ -1,19 +1,3 @@
-/*
-Build a simple Application which stores ToDo tasks with a due date for each user.
-The App should have jwt based authentication.
-You can use either use MySQL or PostgreSQL (recommended) as the database.
-The App should expose following endpoints for CRUD and auth operations:
-- Register a new user
-- User login
-- Add a Task
-- Edit a Task
-- Delete a Task
-- Get All Tasks for a user
-- Assign a Internal / External user a task by email address.
-  If the user doesn’t exist send them an email to sign up.
-  Once they signup that note should be assigned to them automatically.
-*/
-
 package controllers
 
 import (
@@ -49,7 +33,7 @@ func (a *App) Initialize(DbHost, DbPort, DbUser, DbName, DbPassword string) {
 		fmt.Printf("Connected to the database %s\n", DbName)
 	}
 
-	a.DB.Debug().AutoMigrate(&models.User{})
+	a.DB.Debug().AutoMigrate(&models.User{}, &models.Todo{})
 
 	a.Router = mux.NewRouter().StrictSlash(true)
 
@@ -62,6 +46,11 @@ func (a *App) InitializeRoutes() {
 	a.Router.HandleFunc("/", home).Methods("GET")
 	a.Router.HandleFunc("/register", a.UserSignUp).Methods("POST")
 	a.Router.HandleFunc("/login", a.UserLogin).Methods("POST")
+
+	s := a.Router.PathPrefix("/api").Subrouter()
+	s.Use(middlewares.AuthJwtVerify)
+
+	s.HandleFunc("/todos", a.CreateTodo).Methods("POST")
 }
 
 func (a *App) RunServer() {

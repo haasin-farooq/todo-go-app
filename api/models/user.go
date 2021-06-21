@@ -15,6 +15,7 @@ type User struct {
 	FirstName string `gorm:"size:100;not null" json:"first_name"`
 	LastName string `gorm:"size:100;not null" json:"last_name"`
 	Password string `gorm:"size:100;not null" json:"password"`
+	Todos []Todo `json:"todos"`
 }
 
 func HashPassword(password string) (string, error) {
