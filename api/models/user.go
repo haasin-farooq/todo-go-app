@@ -77,7 +77,7 @@ func (u *User) ValidateUser(action string) error {
 	}
 }
 
-func (u *User) SaveUser(db *gorm.DB) (*User, error) {
+func (u *User) CreateUser(db *gorm.DB) (*User, error) {
 	err := db.Debug().Create(&u).Error
 	if err != nil {
 		return &User{}, err

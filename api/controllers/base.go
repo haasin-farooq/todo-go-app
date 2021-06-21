@@ -24,6 +24,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+
+	"github.com/haasin-farooq/todo-go-app/api/middlewares"
 	"github.com/haasin-farooq/todo-go-app/api/models"
 	"github.com/haasin-farooq/todo-go-app/api/responses"
 )
@@ -40,8 +43,8 @@ func (a *App) Initialize(DbHost, DbPort, DbUser, DbName, DbPassword string) {
 
 	a.DB, err = gorm.Open("postgres", connectionString)
 	if err != nil {
-		fmt.Printf("Cannot connect to the database %s\n", DbName)
-		log.Fatal("Error:", err)
+		fmt.Printf("\nCannot connect to the database %s\n", DbName)
+		log.Fatal("Error: ", err)
 	} else {
 		fmt.Printf("Connected to the database %s\n", DbName)
 	}
@@ -54,7 +57,16 @@ func (a *App) Initialize(DbHost, DbPort, DbUser, DbName, DbPassword string) {
 }
 
 func (a *App) InitializeRoutes() {
+	a.Router.Use(middlewares.SetContentTypeMiddleware)
+
 	a.Router.HandleFunc("/", home).Methods("GET")
+	a.Router.HandleFunc("/register", a.UserSignUp).Methods("POST")
+	a.Router.HandleFunc("/login", a.UserLogin).Methods("POST")
+}
+
+func (a *App) RunServer() {
+	log.Printf("Server starting on port 8080\n")
+	log.Fatal(http.ListenAndServe(":8080", a.Router))
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
