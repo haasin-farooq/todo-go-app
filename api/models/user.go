@@ -15,7 +15,7 @@ type User struct {
 	FirstName string `gorm:"size:100;not null" json:"first_name"`
 	LastName string `gorm:"size:100;not null" json:"last_name"`
 	Password string `gorm:"size:100;not null" json:"password"`
-	Todos []Todo `json:"todos"`
+	Todos []Todo `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"todos"`
 }
 
 func HashPassword(password string) (string, error) {
@@ -94,7 +94,7 @@ func (u *User) GetUser(db *gorm.DB) (*User, error) {
 	return user, nil
 }
 
-func GetUserById(id int, db *gorm.DB) (*User, error) {
+func GetUserById(id uint, db *gorm.DB) (*User, error) {
 	user := &User{}
 	if err := db.Debug().Table("users").Where("id = ?", id).First(&user).Error; err != nil {
 		return nil, err

@@ -52,6 +52,7 @@ func (a *App) InitializeRoutes() {
 
 	s.HandleFunc("/todos", a.CreateTodo).Methods("POST")
 	s.HandleFunc("/todos", a.GetUserTodos).Methods("GET")
+	s.HandleFunc("/todos/{id:[0-9]+}", a.UpdateTodo).Methods("PATCH")
 }
 
 func (a *App) RunServer() {

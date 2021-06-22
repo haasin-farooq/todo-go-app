@@ -2,9 +2,11 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 
 	"github.com/haasin-farooq/todo-go-app/api/models"
 	"github.com/haasin-farooq/todo-go-app/api/responses"
@@ -16,7 +18,8 @@ func (a *App) CreateTodo(w http.ResponseWriter, r *http.Request) {
 		"message": "Todo created successfully",
 	}
 
-	userID := r.Context().Value("userID").(float64)
+	u := r.Context().Value("userID").(float64)
+	userID := uint(u)
 
 	todo := &models.Todo{}
 
@@ -28,7 +31,6 @@ func (a *App) CreateTodo(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(body, &todo)
 	if err != nil {
-		fmt.Println(err)
 		responses.ERROR(w, http.StatusBadRequest, err)
 		return
 	}
@@ -41,12 +43,7 @@ func (a *App) CreateTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todo.UserID = int(userID)
-	// todo.DueDate, err = time.Parse("_2-_01-2006 03:04 PM", todo.DueDate.String())
-	// if err != nil {
-	// 	responses.ERROR(w, http.StatusBadRequest, err)
-	// 	return
-	// }
+	todo.UserID = userID
 
 	todoCreated, err := todo.CreateTodo(a.DB)
 	if err != nil {
@@ -58,15 +55,80 @@ func (a *App) CreateTodo(w http.ResponseWriter, r *http.Request) {
 	responses.JSON(w, http.StatusCreated, res)
 }
 
+func (a *App) UpdateTodo(w http.ResponseWriter, r *http.Request) {
+	res := map[string]interface{}{
+		"status": "success",
+		"message": "Todo updated successfully",
+	}
+
+	vars := mux.Vars(r)
+	id, _ := strconv.Atoi(vars["id"])
+
+	u := r.Context().Value("userID").(float64)
+	userID := uint(u)
+
+	t, err := models.GetTodoById(id, a.DB)
+	if err != nil {
+		responses.ERROR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if t == nil {
+		res["status"] = "failed"
+		res["message"] = "Todo not found"
+		responses.JSON(w, http.StatusBadRequest, res)
+		return
+	}
+
+	if t.UserID != userID {
+		res["status"] = "failed"
+		res["message"] = "Unauthorized action"
+	}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		responses.ERROR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	todo := &models.Todo{}
+	err = json.Unmarshal(body, &todo)
+	if err != nil {
+		responses.ERROR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	todo.PrepareTodo()
+
+	err = todo.ValidateTodo()
+	if err != nil {
+		responses.ERROR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	updatedTodo, err := todo.UpdateTodo(id, a.DB)
+	if err != nil {
+		responses.ERROR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	updatedTodo.ID = uint(id)
+	updatedTodo.UserID = userID
+
+	res["todo"] = updatedTodo
+	responses.JSON(w, http.StatusOK, res)
+}
+
 func (a *App) GetUserTodos(w http.ResponseWriter, r *http.Request) {
 	res := map[string]interface{}{
 		"status": "failed",
-		"message": "Unauthorized action, please login",
+		"message": "Unauthorized action",
 	}
 
-	userID := r.Context().Value("userID").(float64)
+	u := r.Context().Value("userID").(float64)
+	userID := uint(u)
 
-	user, err := models.GetUserById(int(userID), a.DB)
+	user, err := models.GetUserById(userID, a.DB)
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
 		return
