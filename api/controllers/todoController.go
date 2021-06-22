@@ -100,7 +100,7 @@ func (a *App) CreateTodoByEmail(w http.ResponseWriter, r *http.Request) {
 		m.SetHeader("From", os.Getenv("EMAIL_ADDRESS"))
 		m.SetHeader("To", email)
 		m.SetHeader("Subject", "Todo App Registeration Invite")
-		m.SetBody("text/plain", "Register your account to view you Todo.")
+		m.SetBody("text/plain", "A todo task has been assigned to you. Please register your account.")
 
 		d := gomail.NewDialer("smtp.gmail.com", 587, os.Getenv("EMAIL_ADDRESS"), os.Getenv("EMAIL_PASSWORD"))
 		
