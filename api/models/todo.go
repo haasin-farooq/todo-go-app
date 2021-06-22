@@ -48,6 +48,13 @@ func (t *Todo) UpdateTodo(id int, db *gorm.DB) (*Todo, error) {
 	return t, nil
 }
 
+func DeleteTodo(id int, db *gorm.DB) error {
+	if err := db.Debug().Table("todos").Where("id = ?", id).Delete(&Todo{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func GetTodoById(id int, db *gorm.DB) (*Todo, error) {
 	todo := &Todo{}
 	if err := db.Debug().Table("todos").Where("id = ?", id).First(&todo).Error; err != nil {

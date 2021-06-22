@@ -119,6 +119,47 @@ func (a *App) UpdateTodo(w http.ResponseWriter, r *http.Request) {
 	responses.JSON(w, http.StatusOK, res)
 }
 
+func (a *App) DeleteTodo(w http.ResponseWriter, r *http.Request) {
+	res := map[string]interface{}{
+		"status": "success",
+		"message": "Todo deleted successfully",
+	}
+
+	vars := mux.Vars(r)
+	id, _ := strconv.Atoi(vars["id"])
+
+	u := r.Context().Value("userID").(float64)
+	userID := uint(u)
+
+	t, err := models.GetTodoById(id, a.DB)
+	if err != nil {
+		responses.ERROR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if t == nil {
+		res["status"] = "failed"
+		res["message"] = "Todo not found"
+		responses.JSON(w, http.StatusBadRequest, res)
+		return
+	}
+
+	if t.UserID != userID {
+		res["status"] = "failed"
+		res["message"] = "Unauthorized action"
+		responses.JSON(w, http.StatusBadRequest, res)
+		return
+	}
+
+	err = models.DeleteTodo(id, a.DB)
+	if err != nil {
+		responses.ERROR(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	responses.JSON(w, http.StatusOK, res)
+}
+
 func (a *App) GetUserTodos(w http.ResponseWriter, r *http.Request) {
 	res := map[string]interface{}{
 		"status": "failed",
