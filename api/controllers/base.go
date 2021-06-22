@@ -33,7 +33,7 @@ func (a *App) Initialize(DbHost, DbPort, DbUser, DbName, DbPassword string) {
 		fmt.Printf("Connected to the database %s\n", DbName)
 	}
 
-	a.DB.Debug().AutoMigrate(&models.User{}, &models.Todo{})
+	a.DB.Debug().AutoMigrate(&models.User{}, &models.Todo{}, &models.TempTodo{})
 
 	a.Router = mux.NewRouter().StrictSlash(true)
 
@@ -46,6 +46,7 @@ func (a *App) InitializeRoutes() {
 	a.Router.HandleFunc("/", home).Methods("GET")
 	a.Router.HandleFunc("/register", a.UserSignUp).Methods("POST")
 	a.Router.HandleFunc("/login", a.UserLogin).Methods("POST")
+	a.Router.HandleFunc("/todos/{email}", a.CreateTodoByEmail).Methods("POST")
 
 	s := a.Router.PathPrefix("/api").Subrouter()
 	s.Use(middlewares.AuthJwtVerify)
@@ -57,8 +58,8 @@ func (a *App) InitializeRoutes() {
 }
 
 func (a *App) RunServer() {
-	log.Printf("Server starting on port 8080\n")
-	log.Fatal(http.ListenAndServe(":8080", a.Router))
+	log.Printf("Server starting on port 8000\n")
+	log.Fatal(http.ListenAndServe(":8000", a.Router))
 }
 
 func home(w http.ResponseWriter, r *http.Request) {

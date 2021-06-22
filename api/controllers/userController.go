@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -50,6 +51,26 @@ func (a *App) UserSignUp(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
 		return
+	}
+
+	tempTodos, _ := models.GetTempTodosByEmail(userCreated.Email, a.DB)
+	if len(tempTodos) > 0 {
+		for _, tt := range tempTodos {
+			todo := models.Todo{}
+			todo.Task = tt.Task
+			todo.DueDate = tt.DueDate
+			todo.UserID = userCreated.ID
+			_, err := todo.CreateTodo(a.DB)
+			if err != nil {
+				responses.ERROR(w, http.StatusBadRequest, err)
+				return
+			}
+		}
+		err := models.DeleteTempTodos(userCreated.Email, a.DB)
+		if err != nil {
+			fmt.Println(err)
+		}
+		res["message"] = "Registration successful, login to view assigned todos"
 	}
 
 	res["user"] = userCreated

@@ -102,6 +102,14 @@ func GetUserById(id uint, db *gorm.DB) (*User, error) {
 	return user, nil
 }
 
+func GetUserByEmail(email string, db *gorm.DB) (*User, error) {
+	user := &User{}
+	if err := db.Debug().Table("users").Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
 func (u *User) GetAllUsers(db *gorm.DB) (*[]User, error) {
 	users := []User{}
 	if err := db.Debug().Table("users").Find(&users).Error; err != nil {
