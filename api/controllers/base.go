@@ -60,8 +60,8 @@ func (a *App) InitializeRoutes() {
 }
 
 func (a *App) RunServer() {
-	log.Printf("Server starting on port 8000\n")
-	log.Fatal(http.ListenAndServe(":8000", a.Router))
+	log.Printf("Server starting on port 8080\n")
+	log.Fatal(http.ListenAndServe(":8080", a.Router))
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
