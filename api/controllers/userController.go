@@ -31,15 +31,12 @@ func (a *App) UserSignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, _ := user.GetUser(a.DB)
-	if u != nil {
-		res["status"] = "failed"
-		res["message"] = "User already exists, please login"
-		responses.JSON(w, http.StatusBadRequest, res)
+	user.PrepareUser()
+	err = user.HashPassword()
+	if err != nil {
+		responses.ERROR(w, http.StatusInternalServerError, err)
 		return
 	}
-
-	user.PrepareUser()
 
 	err = user.ValidateUser("")
 	if err != nil {
@@ -47,30 +44,32 @@ func (a *App) UserSignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userCreated, err := user.CreateUser(a.DB)
-	if err != nil {
-		responses.ERROR(w, http.StatusBadRequest, err)
-		return
-	}
-
-	tempTodos, _ := models.GetTempTodosByEmail(userCreated.Email, a.DB)
-	if len(tempTodos) > 0 {
-		for _, tt := range tempTodos {
-			todo := models.Todo{}
-			todo.Task = tt.Task
-			todo.DueDate = tt.DueDate
-			todo.UserID = userCreated.ID
-			_, err := todo.CreateTodo(a.DB)
+	u, _ := user.GetUser(a.DB)
+	if u != nil {
+		if u.IsRegistered {
+			res["status"] = "failed"
+			res["message"] = "User already exists, please login"
+			responses.JSON(w, http.StatusBadRequest, res)
+			return
+		} else {
+			registeredUser, err := user.RegisterUser(a.DB)
 			if err != nil {
 				responses.ERROR(w, http.StatusBadRequest, err)
 				return
 			}
+			registeredUser.ID = u.ID
+			res["message"] = "Registration successful, login to view assigned todos"
+			res["user"] = registeredUser
+			responses.JSON(w, http.StatusOK, res)
+			return
 		}
-		err := models.DeleteTempTodos(userCreated.Email, a.DB)
-		if err != nil {
-			fmt.Println(err)
-		}
-		res["message"] = "Registration successful, login to view assigned todos"
+		
+	}
+
+	userCreated, err := user.CreateUser(a.DB)
+	if err != nil {
+		responses.ERROR(w, http.StatusBadRequest, err)
+		return
 	}
 
 	res["user"] = userCreated
@@ -116,10 +115,19 @@ func (a *App) UserLogin(w http.ResponseWriter, r *http.Request) {
 		res["message"] = "User not found, please register"
 		responses.JSON(w, http.StatusBadRequest, res)
 		return
+	} else {
+		if !u.IsRegistered {
+			res["status"] = "failed"
+			res["message"] = "Unregistered user"
+			responses.JSON(w, http.StatusBadRequest, res)
+			return
+		}
 	}
 
 	err = models.CheckPasswordHash(user.Password, u.Password)
 	if err != nil {
+		fmt.Println(user.Password)
+		fmt.Println(u.Password)
 		res["status"] = "failed"
 		res["message"] = "Login failed, please try again"
 		responses.JSON(w, http.StatusBadRequest, res)

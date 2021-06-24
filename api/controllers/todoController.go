@@ -89,10 +89,11 @@ func (a *App) CreateTodoByEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, _ := models.GetUserByEmail(email, a.DB)
+	user := &models.User{}
+	user.Email = email
+	u, _ := user.GetUser(a.DB)
 
 	if u == nil {
-		res["status"] = "success"
 		res["message"] = "User not found, an email has been sent to invite the user to register"
 
 		m := gomail.NewMessage()
@@ -111,22 +112,20 @@ func (a *App) CreateTodoByEmail(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		tempTodo := &models.TempTodo{}
-		tempTodo.Task = todo.Task
-		tempTodo.DueDate = todo.DueDate
-		tempTodo.Email = email
-		tempTodoCreated, err := tempTodo.CreateTempTodo(a.DB)
+		user.FirstName = "dummy name"
+		user.LastName = "dummy name"
+		user.Password = "dummypassword"
+		user.IsRegistered = false
+		unregisteredUser, err := user.CreateUser(a.DB)
 		if err != nil {
 			responses.ERROR(w, http.StatusBadRequest, err)
 			return
 		}
 
-		res["todo"] = tempTodoCreated
-		responses.JSON(w, http.StatusOK, res)
-		return
+		todo.UserID = unregisteredUser.ID
+	} else {
+		todo.UserID = u.ID
 	}
-
-	todo.UserID = u.ID
 
 	todoCreated, err := todo.CreateTodo(a.DB)
 	if err != nil {

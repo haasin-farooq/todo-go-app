@@ -37,14 +37,6 @@ func (t *Todo) CreateTodo(db *gorm.DB) (*Todo, error) {
 	return t, nil
 }
 
-func CreateTodosInBatches(todos []Todo, db *gorm.DB) error {
-	err := db.Debug().Create(&todos).Error
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (t *Todo) UpdateTodo(id int, db *gorm.DB) (*Todo, error) {
 	if err := db.Debug().Table("todos").Where("id = ?", id).Updates(
 		Todo {

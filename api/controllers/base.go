@@ -33,7 +33,7 @@ func (a *App) Initialize(DbHost, DbPort, DbUser, DbName, DbPassword string) {
 		fmt.Printf("Connected to the database %s\n", DbName)
 	}
 
-	a.DB.Debug().AutoMigrate(&models.User{}, &models.Todo{}, &models.TempTodo{})
+	a.DB.Debug().AutoMigrate(&models.User{}, &models.Todo{})
 
 	a.DB.Debug().Model(&models.Todo{}).AddForeignKey("user_id", "users(id)", "CASCADE", "NO ACTION")
 

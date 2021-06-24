@@ -15,12 +15,18 @@ type User struct {
 	FirstName string `gorm:"size:100;not null" json:"first_name"`
 	LastName string `gorm:"size:100;not null" json:"last_name"`
 	Password string `gorm:"size:100;not null" json:"password"`
+	IsRegistered bool `gorm:"not null" json:"is_registered"`
 	Todos []Todo `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"todos"`
 }
 
-func HashPassword(password string) (string, error) {
+func (u *User) HashPassword() error {
+	password := strings.TrimSpace(u.Password)
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	return string(hashPassword), err
+	if err != nil {
+		return err
+	}
+	u.Password = string(hashPassword)
+	return nil
 }
 
 func CheckPasswordHash(password, hash string) error {
@@ -31,21 +37,11 @@ func CheckPasswordHash(password, hash string) error {
 	return nil
 }
 
-// BeforeSave Hook is called automatically
-func (u *User) BeforeSave() error {
-	password := strings.TrimSpace(u.Password)
-	hashedPassword, err := HashPassword(password)
-	if err != nil {
-		return err
-	}
-	u.Password = string(hashedPassword)
-	return nil
-}
-
 func (u *User) PrepareUser() {
 	u.Email = strings.TrimSpace(u.Email)
 	u.FirstName = strings.TrimSpace(u.FirstName)
 	u.LastName = strings.TrimSpace(u.LastName)
+	u.IsRegistered = true
 }
 
 func (u *User) ValidateUser(action string) error {
@@ -86,6 +82,20 @@ func (u *User) CreateUser(db *gorm.DB) (*User, error) {
 	return u, nil
 }
 
+func (u *User) RegisterUser(db *gorm.DB) (*User, error) {
+	if err := db.Debug().Table("users").Where("email = ?", u.Email).Updates(
+		User {
+			FirstName: u.FirstName,
+			LastName: u.LastName,
+			Password: u.Password,
+			IsRegistered: true,
+		},
+	).Error; err != nil {
+		return &User{}, err
+	}
+	return u, nil
+}
+
 func (u *User) GetUser(db *gorm.DB) (*User, error) {
 	user := &User{}
 	if err := db.Debug().Table("users").Where("email = ?", u.Email).Find(&user).Error; err != nil {
@@ -97,14 +107,6 @@ func (u *User) GetUser(db *gorm.DB) (*User, error) {
 func GetUserById(id uint, db *gorm.DB) (*User, error) {
 	user := &User{}
 	if err := db.Debug().Table("users").Where("id = ?", id).First(&user).Error; err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
-func GetUserByEmail(email string, db *gorm.DB) (*User, error) {
-	user := &User{}
-	if err := db.Debug().Table("users").Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return user, nil
