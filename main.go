@@ -17,18 +17,15 @@ The App should expose following endpoints for CRUD and auth operations:
 package main
 
 import (
-	"log"
 	"os"
-
-	"github.com/joho/godotenv"
 
 	"github.com/haasin-farooq/todo-go-app/api/controllers"
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	// if err := godotenv.Load(); err != nil {
+	// 	log.Fatal("Error loading .env file")
+	// }
 
 	app := controllers.App{}
 	app.Initialize(
